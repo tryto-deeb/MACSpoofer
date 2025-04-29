@@ -75,26 +75,30 @@ def get_current_mac():
 
 def mac_address_status(interface):
     '''Displays the MAC address status of the specified network interface.'''
-
-    if not os.path.isfile("/tmp/.original_mac"):
-        original_mac = get_current_mac()
-        print(f"\n{Fore.BLUE}Interface: {Style.RESET_ALL}{interface}")
-        print(f"\n{Fore.BLUE}Original MAC Address:{Style.RESET_ALL}{original_mac}")
+    
+    if is_valid_interface(interface):
         
-    else:
-        with open("/tmp/.original_mac", "r") as file:
-            original_mac = file.read().strip()
-        current_mac = get_current_mac()
-
-        if original_mac == current_mac:
-            print(f"\n{Fore.BLUE}Interface:{Style.RESET_ALL} {interface}")
-            print(f"\n{Fore.BLUE}Original MAC Address:{Style.RESET_ALL} {original_mac}")
+        if not os.path.isfile("/tmp/.original_mac"):
+            original_mac = get_current_mac()
+            print(f"\n{Fore.BLUE}Interface: {Style.RESET_ALL}{interface}")
+            print(f"\n{Fore.BLUE}Original MAC Address:{Style.RESET_ALL}{original_mac}")
 
         else:
-            print(f"\n{Fore.BLUE}Interface:{Style.RESET_ALL} {interface}")
-            print(f"\n{Fore.MAGENTA}Spoofed MAC Address:{Style.RESET_ALL} {current_mac}")
-            print(f"{Fore.BLUE}Original MAC Address:{Style.RESET_ALL} {original_mac}")
-        
+            with open("/tmp/.original_mac", "r") as file:
+                original_mac = file.read().strip()
+            current_mac = get_current_mac()
+
+            if original_mac == current_mac:
+                print(f"\n{Fore.BLUE}Interface:{Style.RESET_ALL} {interface}")
+                print(f"\n{Fore.BLUE}Original MAC Address:{Style.RESET_ALL} {original_mac}")
+
+            else:
+                print(f"\n{Fore.BLUE}Interface:{Style.RESET_ALL} {interface}")
+                print(f"\n{Fore.MAGENTA}Spoofed MAC Address:{Style.RESET_ALL} {current_mac}")
+                print(f"{Fore.BLUE}Original MAC Address:{Style.RESET_ALL} {original_mac}")
+    else:
+        print(f"{Fore.RED}Invalid interface format:{Style.RESET_ALL} {interface}")
+        sys.exit(1)
 
 def save_original_mac():
     '''Saves the original MAC address of the system to a temporary file.'''
@@ -173,21 +177,32 @@ def random_mac():
     return mac
 
 
-
-def is_valid_mac(interface, mac_address):
-    '''Validates the format of the provided network interface and MAC address.'''
+def is_valid_interface(interface):
+    '''Validates the format of the provided network interface.'''
 
     is_valid_interface = re.match(r'^[e][n|t][s|h]\d{1,2}$', interface)
+
+    return is_valid_interface
+
+
+def is_valid_mac(mac_address):
+    '''Validates the format of the provided MAC address.'''
+
     is_valid_mac_address = re.match(r'^([A-Fa-f0-9]{2}[:]){5}[A-Fa-f0-9]{02}$', mac_address)
 
-    return is_valid_interface and is_valid_mac_address
+    return  is_valid_mac_address
 
 
 
 def change_mac_address(interface, mac_address):
     '''Changes the MAC address of the specified network interface to the provided MAC address.'''
 
-    if is_valid_mac(interface, mac_address):
+    if not is_valid_interface(interface):
+        print(f"\n{Fore.RED}Invalid interface format:{Style.RESET_ALL} {interface}")
+        sys.exit(1)
+
+
+    if is_valid_mac(mac_address):
         print(f"\n{Fore.BLUE}Changing MAC address of{Style.RESET_ALL} {interface} {Fore.BLUE}to{Style.RESET_ALL} {mac_address}")
         subprocess.run(["sudo", "ip", "link", "set", "dev", interface, "down"], check=True)
         subprocess.run(["sudo", "ip", "link", "set", "dev", interface, "address", mac_address], check=True)
@@ -195,7 +210,7 @@ def change_mac_address(interface, mac_address):
         print(Fore.GREEN + "\nMAC address changed successfully.")
 
     else:
-        print(f"{Fore.RED}Invalid MAC address or interface format:{Style.RESET_ALL} {interface} {mac_address}")      
+        print(f"\n{Fore.RED}Invalid MAC address format:{Style.RESET_ALL} {mac_address}")      
    
 
 def main():
